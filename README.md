@@ -16,11 +16,11 @@ npm run deploy
 
 ```mermaid
 graph TD
-A[<img src="./Arch_Amazon-API-Gateway_32.svg"/>]
+A[API Gateway]
 
-B[<img src="./Arch_AWS-Lambda_32.svg">]
-C[<img src="./Arch_AWS-Lambda_32.svg">]
-D[<img src="./Arch_AWS-Lambda_32.svg">]
+B[Lamdba]
+C[Lambda]
+D[Lambda]
 
 A -->|GET /two-sum-two| B
 A -->|GET /move-zeros-to-end| C

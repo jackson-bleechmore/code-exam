@@ -1,30 +1,39 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { hideCreditCardNumber } from "./hideCreditCardNumber";
+import { getLogger } from "../../shared/logger";
+import {
+  createResponseInternalError,
+  createResponseInvalidInput,
+  createResponseSuccess,
+} from "../../shared/responses";
+
+const logger = getLogger();
 
 export async function handler(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
+  const loggingMetadata = {
+    requestId: event?.requestContext?.requestId,
+    handler: "hideCreditCardNumber",
+  };
+  logger.debug("hideCreditCardNumber handler called", { ...loggingMetadata });
+  let creditCardNumber: string;
   try {
     const body = JSON.parse(event.body || "{}");
-    const creditCardNumber = body.creditCardNumber;
-
+    creditCardNumber = body.creditCardNumber;
     if (!creditCardNumber || typeof creditCardNumber !== "string") {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "Invalid Input" }),
-      };
+      logger.debug("Invalid Input", { ...loggingMetadata });
+      return createResponseInvalidInput();
     }
-
-    const hiddenCreditCardNumber = hideCreditCardNumber(creditCardNumber);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ data: hiddenCreditCardNumber }),
-    };
   } catch (error) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Internal Server Error" }),
-    };
+    logger.debug("Invalid Input", { ...loggingMetadata });
+    return createResponseInvalidInput();
+  }
+  try {
+    const hiddenCreditCardNumber = hideCreditCardNumber(creditCardNumber);
+    return createResponseSuccess(hiddenCreditCardNumber);
+  } catch (error) {
+    logger.error("Internal Server Error", { ...loggingMetadata, error });
+    return createResponseInternalError();
   }
 }

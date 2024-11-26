@@ -1,42 +1,46 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
-import { twoSumTwo } from './twoSumTwo'
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { twoSumTwo } from "./twoSumTwo";
+import {
+  createResponseInvalidInput,
+  createResponseSuccess,
+} from "../../shared/responses";
+import { getLogger } from "../../shared/logger";
+
+const logger = getLogger();
 
 export const handler = async (
-    event: APIGatewayProxyEvent
+  event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-    try {
-        const numsQueryString = event.queryStringParameters?.nums
-        const targetQueryString = event.queryStringParameters?.target
+  const loggingMetadata = {
+    requestId: event?.requestContext?.requestId,
+    handler: "twoSumTwo",
+  };
+  logger.debug("twoSumTwo handler called", { ...loggingMetadata });
 
-        if (!numsQueryString || !targetQueryString) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ message: 'Invalid Input' }),
-            }
-        }
+  const numsQueryString = event.queryStringParameters?.nums;
+  const targetQueryString = event.queryStringParameters?.target;
+  if (!numsQueryString || !targetQueryString) {
+    logger.debug("Invalid Input", { ...loggingMetadata });
+    return createResponseInvalidInput();
+  }
 
-        let nums
-        let target
-        try {
-            nums = JSON.parse(numsQueryString)
-            target = Number(targetQueryString)
-        } catch (error) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ message: 'Invalid Input' }),
-            }
-        }
+  let nums;
+  let target;
+  logger.info("Parsing input", { ...loggingMetadata });
+  try {
+    nums = JSON.parse(numsQueryString);
+    target = Number(targetQueryString);
+  } catch (error) {
+    logger.debug("Invalid Input", { ...loggingMetadata, error });
+    return createResponseInvalidInput();
+  }
 
-        const result = twoSumTwo(nums, target)
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ data: result }),
-        }
-    } catch (error) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: 'Internal Server Error' }),
-        }
-    }
-}
+  logger.info("Calculating result", { ...loggingMetadata });
+  try {
+    const result = twoSumTwo(nums, target);
+    return createResponseSuccess(result);
+  } catch (error) {
+    logger.error("Internal Server Error", { ...loggingMetadata, error });
+    return createResponseInvalidInput();
+  }
+};
